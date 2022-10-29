@@ -1,6 +1,8 @@
 import json
 from multiprocessing.pool import ThreadPool
 
+from alive_progress import alive_bar
+
 import requests
 from os import listdir , mkdir
 from os.path import isfile, isdir, join, basename, dirname, splitext
@@ -45,6 +47,11 @@ def walk_dialog_directory(dir_path: str) -> list:
 def walk_messages_directory(base_dir: str) -> dict:
 	result = {}
 	dirs = get_all_dirs_from_directory(base_dir)
+	with alive_bar(len(mylist)) as bar:
+		for i in mylist:
+			bar()
+			time.sleep(1)
+	
 	for i, path in enumerate(dirs):
 		print('Processing dialog ' + str(i) + ' out of ' + str(len(dirs)))
 		id = basename(dirname(path + '/'))
@@ -115,21 +122,6 @@ def main():
 			pass
 
 
-		# len_photo = 0
-		# old_photo = 0
-		# for i in result:
-		# 	len_photo+=len(result[i])
-		# 	for url in result[i]:
-		# 		file_name_start_pos = url.rfind("/") + 1
-		# 		file_name = url[file_name_start_pos:]
-		# 		if (i in listdir('result')) == True:
-		# 			if ((i+ '_' + file_name) in listdir('result/'+i)) == True:
-		# 				old_photo+=1
-		# 				print(result[i])
-		# 				result[i].pop(result[i].index(url))
-		# 				print(result[i])
-		# 				input()
-						
 		for i in result:
 			for url in result[i]:
 				print(i , len(result[i]))
@@ -139,7 +131,7 @@ def main():
 		print('в {} чатах всего {} фотографий'.format(len(result) ,len_photo))
 		
 		# if old_photo >0:
-		# 	print("ого , так ты уже использывал этот режим?\nТогда вычеркиваем уже скаченные {} фотографии из общего списка".format(old_photo))
+		#   print("ого , так ты уже использывал этот режим?\nТогда вычеркиваем уже скаченные {} фотографии из общего списка".format(old_photo))
 		
 
 		download_images(result)
