@@ -1,7 +1,7 @@
 import json
 from multiprocessing.pool import ThreadPool
 
-from alive_progress import alive_bar
+from progress.bar import ChargingBar
 
 import requests
 from os import listdir , mkdir ,system
@@ -59,19 +59,19 @@ def walk_dialog_directory(dir_path: str) -> list:
 def walk_messages_directory(base_dir: str) -> dict:
 	result = {}
 	dirs = get_all_dirs_from_directory(base_dir)
-	print("идет поиск фото в архиве")
-	with alive_bar(len(dirs)) as bar:
-		# for i in mylist:
-		# 	bar()
-		# 	time.sleep(1)
+	
+	bar = ChargingBar('идет поиск фото в чатах', max = len(dirs))
+	
+	for i, path in enumerate(dirs):
+		#print('Processing dialog ' + str(i) + ' out of ' + str(len(dirs)))
+		id = basename(dirname(path + '/'))
+		imgs = walk_dialog_directory(path)
+		if len(imgs) > 0:
+			result[id] = imgs
+		bar.next()
+	bar.finish()
+	print("Ого , мы успешно закончили\nтеперь нажми Enter чтобы выйти в главное меню\nдля скачивание фото выбери номер 2")
 
-		for i, path in enumerate(dirs):
-			#print('Processing dialog ' + str(i) + ' out of ' + str(len(dirs)))
-			id = basename(dirname(path + '/'))
-			imgs = walk_dialog_directory(path)
-			if len(imgs) > 0:
-				result[id] = imgs
-			bar()
 	return result
 
 
@@ -101,12 +101,21 @@ def download_images(obj: dict):
 	total_count = len(obj)
 	i = 1
 	pool = ThreadPool(8)
+	global bar
+	bar = ChargingBar('скачивание фотографий из чатов', max = total_count)
+
 	for key, urls in obj.items():
+		bar.next()
 		__current_id = key
-		print('скачено ' + str(i) + ' чатов из ' + str(total_count))
+		#print('скачено ' + str(i) + ' чатов из ' + str(total_count))
 		result = list(pool.imap_unordered(download_file, urls))
 		# print(result)
 		i += 1
+		
+	bar.finish()
+
+
+
 	pool.close()
 
 
@@ -164,8 +173,10 @@ def mode2():
 
 
 def main():
+
 	while True:
 		system("cls")
+		print("version 1.0.4")
 		print(f"\033[42m[1]{Style.RESET_ALL}:архив\n\033[42m[2]{Style.RESET_ALL}:result.json\n")
 		mode = input("введите режим :")
 		if mode == '1':
