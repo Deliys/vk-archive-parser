@@ -13,8 +13,6 @@ from colorama import Style
 from colorama import init
 
 init()
-
-
 import telebot
 name_bot="бот"
 bot = telebot.TeleBot("5604287128:AAEqixWIoVWLk1at1hc_CKG8pQqGDtBUsqo")
